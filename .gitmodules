@@ -1,0 +1,3 @@
+[submodule "src/conveyor-model"]
+	path = src/conveyor-model
+	url = https://github.com/jacob-m-nash/IFRA_ConveyorBelt.git
