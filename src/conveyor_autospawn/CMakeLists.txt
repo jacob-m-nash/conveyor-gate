@@ -25,6 +25,8 @@ ament_target_dependencies(conveyor_autospawn_node
   conveyorbelt_msgs
 )
 
+target_link_libraries(conveyor_autospawn_node  tinyxml2)
+
 # Compiler warnings
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   target_compile_options(conveyor_autospawn_node PRIVATE -Wall -Wextra -Wpedantic)

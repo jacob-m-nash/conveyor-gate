@@ -8,7 +8,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "gazebo_msgs/srv/spawn_entity.hpp"
 #include "conveyorbelt_msgs/srv/conveyor_belt_control.hpp"
-
+#include "tinyxml2.h"
 
 class ConveyorAutospawnNode : public rclcpp::Node
 {
@@ -17,7 +17,9 @@ private:
 
     void send_conveyor_speed(int power);
 
-    std::string load_box_urdf();
+    std::unique_ptr<tinyxml2::XMLDocument> load_box_urdf();
+
+    void randomise_box_colour(tinyxml2::XMLDocument& doc);
 
     void schedule_next_spawn();
 
