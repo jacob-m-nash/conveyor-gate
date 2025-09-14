@@ -13,7 +13,7 @@ ConveyorAutospawnNode::ConveyorAutospawnNode()
     rng_(std::random_device{}()),
     count_(0)
     {
-        speed_ = this->declare_parameter("speed",50);
+        speed_ = this->declare_parameter("speed",20);
         y_ = this->declare_parameter("y",-0.5);
         z_ = this->declare_parameter("z", 0.76);
         x_min_ = this->declare_parameter("x_min", -0.05);
@@ -23,12 +23,12 @@ ConveyorAutospawnNode::ConveyorAutospawnNode()
 
         uni_interval_ = std::uniform_real_distribution<double>(min_interval_s_, max_interval_s_);
         uni_x_ = std::uniform_real_distribution<double>(x_min_,x_max_);
-
         conveyor_client_ = this->create_client<conveyorbelt_msgs::srv::ConveyorBeltControl>("/CONVEYORPOWER");
         spawn_client_ = this->create_client<gazebo_msgs::srv::SpawnEntity>("/spawn_entity");
 
         wait_for_services();
         send_conveyor_speed(speed_);
+        RCLCPP_WARN(this->get_logger(),"conveyor speed: %i", speed_);
         schedule_next_spawn();
     }
 
@@ -99,18 +99,15 @@ ConveyorAutospawnNode::ConveyorAutospawnNode()
         req -> initial_pose.orientation.w = 1.0;
         req-> reference_frame = "world";
 
-        auto future = spawn_client_->async_send_request(req);
         auto self = shared_from_this();
-        std::thread([this,self,future = std::move(future)]() mutable{
-            if(future.wait_for(5s) == std::future_status::ready){
-                auto resp = future.get();
-                if(!resp->success){
-                    RCLCPP_WARN(this->get_logger(), "Spawn failed: %s", resp->status_message.c_str());
-                }
+        spawn_client_ -> async_send_request(req,
+        [this,self](rclcpp::Client<gazebo_msgs::srv::SpawnEntity>::SharedFuture future){
+            auto resp = future.get();
+            if(!resp->success){
+                RCLCPP_WARN(this -> get_logger(), "Spawn failed: %s", resp -> status_message.c_str());
             }
-                this->schedule_next_spawn();
-            
-            }).detach();
+            this -> schedule_next_spawn();
+        });
         }
 
     int main(int argc, char ** argv){
