@@ -13,7 +13,7 @@ ConveyorAutospawnNode::ConveyorAutospawnNode()
     rng_(std::random_device{}()),
     count_(0)
     {
-        speed_ = this->declare_parameter("speed",20);
+        speed_ = this->declare_parameter("speed",50);
         y_ = this->declare_parameter("y",-0.5);
         z_ = this->declare_parameter("z", 0.76);
         x_min_ = this->declare_parameter("x_min", -0.05);
@@ -28,7 +28,6 @@ ConveyorAutospawnNode::ConveyorAutospawnNode()
 
         wait_for_services();
         send_conveyor_speed(speed_);
-        RCLCPP_WARN(this->get_logger(),"conveyor speed: %i", speed_);
         schedule_next_spawn();
     }
 
