@@ -46,15 +46,16 @@ void BoxColorDetectorNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr
     std::string colour = "unknown";
     if (std::max(blue_frac, red_frac) >= min_fraction_) {
         colour = (blue_frac >= red_frac) ? "blue" : "red";
+        std_msgs::msg::String out;
+        out.data = colour;
+        color_pub_->publish(out);
     }
-
-    std_msgs::msg::String out;
-    out.data = colour;
-    color_pub_->publish(out);
 }
 
 int main(int argc, char * argv[]){
-    rclcpp::init(argc,argv);
+    rclcpp::init(argc, argv);
+    auto node = std::make_shared<BoxColorDetectorNode>();
+    rclcpp::spin(node);
+    rclcpp::shutdown();
     return 0;
 }
-
