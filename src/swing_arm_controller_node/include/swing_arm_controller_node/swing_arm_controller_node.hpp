@@ -17,11 +17,13 @@ class SwingArmControllerNode: public rclcpp::Node{
         rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr joint_pub_;
         rclcpp::Subscription<std_msgs::msg::String>::SharedPtr command_sub_;
 
-        double position_1_;
-        double position_2_;
+        double swing_angle_;
+        double debounce_duration_;
+        double move_duration_;
+
         std::string last_command_;
         rclcpp::Time last_command_time_;
-        std::chrono::seconds debounce_duration_;
+
         
 };
 

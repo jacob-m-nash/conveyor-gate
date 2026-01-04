@@ -19,6 +19,16 @@ def generate_launch_description():
     min_int_arg      = DeclareLaunchArgument("min_interval_s", default_value="2.0")
     max_int_arg      = DeclareLaunchArgument("max_interval_s", default_value="6.0")
 
+    # Swing arm controller args
+
+    pid_p_arg = DeclareLaunchArgument('pid_p', default_value='100.0')
+    pid_i_arg = DeclareLaunchArgument('pid_i', default_value='0.0')
+    pid_d_arg = DeclareLaunchArgument('pid_d', default_value='50.0')
+
+    swing_angle_arg = DeclareLaunchArgument('swing_angle', default_value='0.523599') # 30 degrees
+    debounce_arg = DeclareLaunchArgument('debounce_duration', default_value='3.0')
+    move_duration_arg = DeclareLaunchArgument('move_duration', default_value='0.5')
+
     image_topic_arg  = DeclareLaunchArgument("image_topic", default_value="/camera/image_raw")
     min_frac_arg     = DeclareLaunchArgument("min_fraction", default_value="0.002")
 
@@ -84,12 +94,22 @@ def generate_launch_description():
         executable="swing_arm_controller_node",
         name="swing_arm_controller",
         output="screen",
+        parameters=[{
+            'swing_angle': LaunchConfiguration('swing_angle'),
+            'debounce_duration': LaunchConfiguration('debounce_duration'),
+            'move_duration': LaunchConfiguration('move_duration'),
+        }]
     )
 
     spawn_joint_state_broadcaster = Node(
     package='controller_manager',
     executable='spawner',
-    arguments=['joint_state_broadcaster']
+    arguments=['joint_state_broadcaster'],
+    parameters=[{
+        'arm_controller.gains.boom_link_JOINT_0.p': LaunchConfiguration('pid_p'),
+        'arm_controller.gains.boom_link_JOINT_0.i': LaunchConfiguration('pid_i'),
+        'arm_controller.gains.boom_link_JOINT_0.d': LaunchConfiguration('pid_d'),
+    }]
     )
 
     spawn_arm_controller = Node(
@@ -116,6 +136,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         speed_arg,y_arg,z_arg,x_min_arg,x_max_arg,min_int_arg,max_int_arg,
+        pid_p_arg,pid_i_arg,pid_d_arg,swing_angle_arg,debounce_arg,move_duration_arg,
         image_topic_arg, min_frac_arg,show_view_arg,
         include_world,
         autospawn_node,
