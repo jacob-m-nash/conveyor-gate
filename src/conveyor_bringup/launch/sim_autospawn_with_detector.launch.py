@@ -1,11 +1,13 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription,RegisterEventHandler
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.event_handlers import OnProcessExit
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 import os
+import xacro
 
 def generate_launch_description():
     # Autospawn args
@@ -54,6 +56,56 @@ def generate_launch_description():
         }],
     )
 
+    xacro_file = os.path.join(conv_share, "models", "swing_arm2", "swing_arm2.urdf.xacro")
+    robot_description = xacro.process_file(xacro_file).toxml() 
+    robot_state_publisher = Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        parameters=[{'robot_description': robot_description}]
+    )
+    
+    spawn_robot = Node(
+        package='gazebo_ros',
+        executable='spawn_entity.py',
+        arguments=[
+            '-topic', 'robot_description',
+            '-entity', 'swing_arm',
+            '-x', '0.0',
+            '-y', '0.7',
+            '-z', '0.125',
+            '-R', '0.0',
+            '-P', '0.0',
+            '-Y', '3.14'
+        ]
+    )
+
+    swing_arm_node = Node(
+        package="swing_arm_controller_node",
+        executable="swing_arm_controller_node",
+        name="swing_arm_controller",
+        output="screen",
+    )
+
+    spawn_joint_state_broadcaster = Node(
+    package='controller_manager',
+    executable='spawner',
+    arguments=['joint_state_broadcaster']
+    )
+
+    spawn_arm_controller = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['arm_controller']
+        )
+
+
+    delay_controllers = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=spawn_robot,
+            on_exit=[spawn_joint_state_broadcaster, spawn_arm_controller]
+        )
+    )
+
     viewer_node = Node(
         package="rqt_image_view",
         executable="rqt_image_view",
@@ -68,5 +120,9 @@ def generate_launch_description():
         include_world,
         autospawn_node,
         detector_node,
-        viewer_node
+        spawn_robot,
+        robot_state_publisher,
+        swing_arm_node,
+        viewer_node,
+        delay_controllers,
     ])
