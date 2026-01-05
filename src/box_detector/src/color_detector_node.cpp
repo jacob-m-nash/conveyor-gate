@@ -10,8 +10,8 @@ BoxColorDetectorNode::BoxColorDetectorNode():Node("box_color_detector_node"){
     img_sub_ = image_transport::create_subscription(this,image_topic_,std::bind(&BoxColorDetectorNode::imageCb, this,std::placeholders::_1),"raw", qos.get_rmw_qos_profile());
 
     color_pub_ = this->create_publisher<std_msgs::msg::String>("detected_box_colour",10);
-    debug_pub_ = image_transport::create_publisher(this,"debug_mask");
-    
+    debug_pub_ = image_transport::create_publisher(this,"debug_img");
+    debug_enabled_ = this->declare_parameter<bool>("show_debug", false);
     RCLCPP_INFO(this->get_logger(),"Subscribed to %s", image_topic_.c_str());
 }
 
@@ -50,6 +50,32 @@ void BoxColorDetectorNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr
         out.data = colour;
         color_pub_->publish(out);
     }
+
+    if (debug_enabled_) {
+        cv::Mat debug_img = bgr.clone();
+        
+        if (colour != "unknown") {
+            cv::Scalar text_color = (colour == "blue") ? cv::Scalar(255, 0, 0) : cv::Scalar(0, 0, 255);
+            int font = cv::FONT_HERSHEY_SIMPLEX;
+            double font_scale = 1.5;
+            int thickness = 3;
+            int baseline = 0;
+            
+            cv::Size text_size = cv::getTextSize(colour, font, font_scale, thickness, &baseline);
+            
+            int padding = 10;
+            cv::Point text_org(
+                debug_img.cols - text_size.width - padding,
+                debug_img.rows - padding
+            );
+        
+            cv::putText(debug_img, colour, text_org, font, font_scale, text_color, thickness);
+        }
+        
+        sensor_msgs::msg::Image::SharedPtr debug_msg = 
+            cv_bridge::CvImage(msg->header, "bgr8", debug_img).toImageMsg();
+        debug_pub_.publish(debug_msg);
+        }
 }
 
 int main(int argc, char * argv[]){

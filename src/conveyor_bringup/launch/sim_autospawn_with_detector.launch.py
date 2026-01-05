@@ -31,8 +31,8 @@ def generate_launch_description():
 
     image_topic_arg  = DeclareLaunchArgument("image_topic", default_value="/camera/image_raw")
     min_frac_arg     = DeclareLaunchArgument("min_fraction", default_value="0.002")
-
-    show_view_arg    = DeclareLaunchArgument("show_view", default_value="false")
+    show_debug_arg    = DeclareLaunchArgument("show_debug", default_value="false")
+    show_raw_arg    = DeclareLaunchArgument("show_raw", default_value="false")
 
     conv_share = get_package_share_directory("conveyorbelt_gazebo")
     conv_launch = os.path.join(conv_share, "launch", "conveyorbelt.launch.py")
@@ -63,6 +63,7 @@ def generate_launch_description():
         parameters=[{
             "image_topic": LaunchConfiguration("image_topic"),
             "min_fraction": LaunchConfiguration("min_fraction"),
+            "show_debug": LaunchConfiguration("show_debug"),
         }],
     )
 
@@ -126,24 +127,34 @@ def generate_launch_description():
         )
     )
 
-    viewer_node = Node(
-        package="rqt_image_view",
-        executable="rqt_image_view",
-        name="rqt_image_view",
-        output="screen",
-        condition=IfCondition(LaunchConfiguration("show_view")),
-    )
+    raw_viewer_node = Node(
+    package='image_view',
+    executable='image_view',
+    name='raw_image_viewer',
+    remappings=[('image', '/camera/image_raw')],
+    condition=IfCondition(LaunchConfiguration("show_raw")),
+)
+
+    debug_viewer_node = Node(
+    package='image_view',
+    executable='image_view',
+    name='image_viewer',
+    remappings=[('image', '/debug_img')],
+    condition=IfCondition(LaunchConfiguration("show_debug")),
+)
 
     return LaunchDescription([
         speed_arg,y_arg,z_arg,x_min_arg,x_max_arg,min_int_arg,max_int_arg,
         pid_p_arg,pid_i_arg,pid_d_arg,swing_angle_arg,debounce_arg,move_duration_arg,
-        image_topic_arg, min_frac_arg,show_view_arg,
+        image_topic_arg, min_frac_arg,show_debug_arg,
+        show_raw_arg,
         include_world,
         autospawn_node,
         detector_node,
         spawn_robot,
         robot_state_publisher,
         swing_arm_node,
-        viewer_node,
+        debug_viewer_node,
+        raw_viewer_node,
         delay_controllers,
     ])

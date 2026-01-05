@@ -14,6 +14,7 @@ class BoxColorDetectorNode: public rclcpp::Node{
         void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr msg);
         std::string image_topic_;
         double min_fraction_;
+        bool debug_enabled_;
 
         image_transport::Subscriber img_sub_;
         image_transport::Publisher debug_pub_;
